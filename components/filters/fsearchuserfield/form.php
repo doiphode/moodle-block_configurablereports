@@ -31,7 +31,7 @@ require_once($CFG->libdir.'/formslib.php');
 
 class fsearchuserfield_form extends moodleform {
     public function definition() {
-        global $remotedb, $USER, $CFG;
+        global $remoteDB, $USER, $CFG;
 
         $mform =& $this->_form;
 
@@ -39,14 +39,14 @@ class fsearchuserfield_form extends moodleform {
 
         $this->_customdata['compclass']->add_form_elements($mform, $this);
 
-        $columns = $remotedb->get_columns('user');
+        $columns = $remoteDB->get_columns('user');
 
         $usercolumns = array();
         foreach ($columns as $c) {
             $usercolumns[$c->name] = $c->name;
         }
 
-        if ($profile = $remotedb->get_records('user_info_field')) {
+        if ($profile = $remoteDB->get_records('user_info_field')) {
             foreach ($profile as $p) {
                 $usercolumns['profile_'.$p->shortname] = $p->name;
             }

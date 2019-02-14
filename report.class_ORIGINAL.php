@@ -189,24 +189,15 @@ class report_base {
 
     public function print_graphs($return = false) {
         $output = '';
-        // /* */
-        // echo 'testing:';
-        // echo '<pre>';
-        // print_r($this->finalreport->table->data);
-        // die;
-       
-
-
-
         $graphs = $this->get_graphs($this->finalreport->table->data);
 
-        // if ($graphs) {
-            // foreach ($graphs as $g) {
-                $output .= '<div id="centerpara">';
-                // $output .= ' <img src="'.$g.'" alt="'.$this->config->name.'"><br />';
+        if ($graphs) {
+            foreach ($graphs as $g) {
+                $output .= '<div class="centerpara">';
+                $output .= ' <img src="'.$g.'" alt="'.$this->config->name.'"><br />';
                 $output .= '</div>';
-            // }
-        // }
+            }
+        }
         if ($return) {
             return $output;
         }
@@ -284,371 +275,20 @@ class report_base {
         global $DB, $CFG;
 
         $components = cr_unserialize($this->config->components);
-
-
-
-
         $graphs = (isset($components['plot']['elements'])) ? $components['plot']['elements'] : array();
-/*
-        echo "<pre>";
-        print_r($graphs);
-        echo "</pre>";
-*/
+
         $reportgraphs = array();
 
         if (!empty($graphs)) {
             $series = array();
-
             foreach ($graphs as $g) {
                 require_once($CFG->dirroot.'/blocks/configurable_reports/components/plot/'.$g['pluginname'].'/plugin.class.php');
                 $classname = 'plugin_'.$g['pluginname'];
                 $class = new $classname($this->config);
                 $reportgraphs[] = $class->execute($g['id'], $g['formdata'], $finalreport);
-
-
-                // echo "<pre>";
-                $querysql = $components['customsql']['config']->querysql;
-
-                // print_r($querysql);
-                // echo "<br/>";
-                // print_r($components);
-
-                // print_r($g["pluginname"]);
-                // echo "<p>#####</p>";
-                // print_r($g['id']);
-                // echo "<p>=======</p>";
-                // print_r($g['formdata']);
-                // echo "<p>----</p>";
-                // echo '<pre>';
-                // print_r($finalreport);
-                // echo '</pre>';
-                // echo "<pre>";
-                // print_r($g);
-                // echo '</pre>';
-
-
-
-                // BAR GRAPH
-                if ($g["pluginname"]=="bar") {
-
-                    $label_field1 = $g['formdata']->label_field;
-                    $value_fields_arr = $g['formdata']->value_fields;
-
-                    $width = $g['formdata']->width;
-                    $height = $g['formdata']->height;
-
-                    $datastr = "";
-                    $label_field1 = explode(",",$g['formdata']->label_field);
-                    $label_value = $label_field1[1];
-                    $label_index = $label_field1[0];
-
-                    $labelstr = '';
-                    foreach($value_fields_arr as $key_fields=>$value_fields){
-                         $value_fields_pieces = explode(",",$value_fields);
-
-                        $value_arrno = $value_fields_pieces[0];
-                         $value_label = $value_fields_pieces[1];
-
-                         $labelstr .= ',"'.$value_label.'"';
-                    }
-                    $labelstr = trim($labelstr,',');
-                    // echo 'label str '.$labelstr;
-
-
-                   
-
-                    foreach ($finalreport as $key_finalreport) {
-
-                        
-                            $datastr .= "[";
-                            $datastr .= "'" . $key_finalreport[$label_index] . "',"; 
-
-                             foreach($value_fields_arr as $key_fields=>$value_fields){
-                                    $value_fields_pieces = explode(",",$value_fields);
-
-                                    $value_arrno = $value_fields_pieces[0];
-                                    $value_label = $value_fields_pieces[1];
-                                    
-                                    
-
-                                     $date = explode(' ',$key_finalreport[$value_arrno]);
-                                     
-                                     if(isset($date[1]) && $date[1] != ""){
-                                        $time = $date[1];
-                            
-                                        $date = $date[0];
-                                           
-                                        $year = explode('-', $date)[0];
-                                        
-                                        if(count($year) > 0){   
-                                              $month = explode('-', $date)[1];
-                                            $day = explode('-', $date)[2];
-                                            $time = explode(':',$time);
-                                            if(isset($time[1]) &&  $time[1] != ""){
-                                                $hour = $time[0];
-                                                $min = $time[1];
-                                                echo '<script type="text/javascript" >';
-                                                 $datastr .= 'new Date('.$year.' , '.($month - 1).' , '.$day.' , '.$hour.' , ' .$min .')';
-                                                 echo ' </script>';
-                                            }
-                                            else{
-                                              echo '<script type="text/javascript" >';
-                                                 $datastr .= 'new Date('.$year.'"," '.($month - 1).'"," '.$day.')';
-                                               echo ' </script>';
-                                            }
-                                               
-                                        }
-                                        else{
-                                            $datastr .= $key_finalreport[$value_arrno].',';
-                                        }
-
-
-
-                            
-                                     }
-                                     else{
-                                         $datastr .= $key_finalreport[$value_arrno].',';
-                                     }
-                                     
-                                   
-
-                            }
-                            $datastr = rtrim($datastr,',');
-                            $datastr .= "],";
-                         
-                    }
-
-
-                    
-
-                    //echo $datastr;
-
-                    // $label_field_pieces = explode(",", $label_field1);
-                    // $label_field = $label_field_pieces[1];
-
-                    // echo 'testing : '.$label_field;
-                    // echo 'datafield : '.$datastr;
-
-                    echo '<script type="text/javascript" src="https://www.google.com/jsapi"></script>
-                    <div id="chart_div_'.$g['id'].'" ></div>';
-                    echo "
-                    <script type='text/javascript'>
-                    google.load('visualization', '1', {packages: ['corechart']});
-                    google.setOnLoadCallback(drawMaterial);
-
-                    function drawMaterial() {
-                    var data = google.visualization.arrayToDataTable([
-                         ['Element'," . $labelstr . "]," .
-                            $datastr
-                       . "
-                    ]);
-
-                    var options = {
-                            vAxis:{},
-                            width:" . $width . ",
-                            height:" . $height . ",
-                            
-                        };
-
-
-                    var chart = new google.visualization.ColumnChart(document.getElementById('chart_div_".$g['id']."'));
-                    chart.draw(data, options);
-                    }
-                    </script>
-                    ";
-                }
-
-                if($g["pluginname"]=="line"){
-
-                    $xaxis = $g['formdata']->xaxis;
-                    $yaxis = $g['formdata']->yaxis;
-                   $datastr = "";
-
-                         foreach ($finalreport as $key_finalreport) {
-
-                        
-                            $datastr .= "[";
-                            $datastr .= "'" . $key_finalreport[$xaxis] . "', ";
-                            $date = explode(' ',$key_finalreport[$yaxis]);
-
-                            if(isset($date[1]) && $date[1] != ""){
-                                        $time = $date[1];
-                            
-                                        $date = $date[0];
-                                           
-                                        $year = explode('-', $date)[0];
-                                        
-                                        if(count($year) > 0){  
-
-                                         $month = explode('-', $date)[1];
-                                            $day = explode('-', $date)[2];
-                                            $time = explode(':',$time);
-                                            if(isset($time[1]) && $time[1] != ""){
-                                                $hour = $time[0];
-                                                $min = $time[1];
-                                                echo '<script type="text/javascript" >';
-                                                 $datastr .= 'new Date('.$year.' , '.($month - 1).' , '.$day.' , '.$hour.' , ' .$min .')';
-                                                 echo ' </script>';
-                                            }
-                                            else{
-                                              echo '<script type="text/javascript" >';
-                                                 $datastr .= 'new Date('.$year.'"," '.($month - 1).'"," '.$day.')';
-                                               echo ' </script>';
-                                            }
-                                               
-                                        }
-                                        else{
-                                            $datastr .= $key_finalreport[$yaxis];
-                                        }
-
-
-
-                            
-                                     }
-                                     else{
-                                         $datastr .= $key_finalreport[$yaxis];
-                                     }
-                              
-
-                            
-                            
-                            $datastr .= "],";
-                         
-                    }
-
-
-                    
-
-                    //echo $datastr;
-
-                    
-
-                    
-                    // echo 'datafield : '.$datastr;
-
-                    echo '<script type="text/javascript" src="https://www.google.com/jsapi"></script>
-                    <div id="chart_div_'.$g['id'].'"></div>';
-                    echo "
-                    <script type='text/javascript'>
-                    google.load('visualization', '1', {packages: ['corechart']});
-                    google.setOnLoadCallback(drawMaterial);
-
-                    function drawMaterial() {
-                    var data = google.visualization.arrayToDataTable([
-                         ['Element', 'attributes']," .
-                            $datastr
-                       . "
-                    ]);
-
-                    var options = {
-                          
-                           legend: { position: 'right' },
-                           
-                          
-                           
-                           
-                        };
-
-
-                    var chart = new google.visualization.LineChart(document.getElementById('chart_div_".$g['id']."'));
-                    chart.draw(data, options);
-                    }
-                    </script>
-                    ";
-
-                }
-                if($g["pluginname"] == "pie"){
-
-                    /* custom  pie generation */
-
-                    if ($g['id'] == 'Cm96xLAN81u0I0E '){
-                        $dataarray = $finalreport;
-                        $datastr  = "";
-                        $datastr .= "[";
-                        $datastr .= "'System users',".(int)$finalreport[0][1];
-                        $datastr .= "],";
-                        $datastr .= "[";
-                        $datastr .= "'Actual users',".(int)$finalreport[0][2];
-                        $datastr .= ']';
-                    }
-                    
-
-                    $datastr = "";
-
-                    $areaname = $g['formdata']->areaname;
-
-                   
-                    $areavalue = $g['formdata']->areavalue;
-
-
-                    foreach($finalreport as $row){
-                        $datastr .= '[';
-                        $datastr .= '"'.$row[$areaname] .'", '. $row[$areavalue];
-                        $datastr .= '],';
-                    }
-                    $datastr = trim($datastr , ',');
-                    
-
-                    echo '<script type="text/javascript" src="https://www.google.com/jsapi"></script>
-                    <div id="chart_div_'.$g['id'].'" ></div>';
-                    echo "
-                    <script type='text/javascript'>
-                    google.load('visualization', '1', {packages: ['corechart']});
-                    google.setOnLoadCallback(drawMaterial);
-
-                    function drawMaterial() {
-                    var data = google.visualization.arrayToDataTable([
-                         ['Element', 'value']," .
-                            $datastr
-                       . "
-                    ]);
-
-                    var options = {
-                          
-                           legend: { position: 'right' },
-                          
-                            'width':600,
-                            'height':600,
-                           
-                        };
-
-
-                    var chart = new google.visualization.PieChart(document.getElementById('chart_div_".$g['id']."'));
-                    chart.draw(data, options);
-                    }
-                    </script>
-                    ";
-
-
-                   
-
-                    
-                  
-                         
-                }
-
-
-                    
-
-                    //echo $datastr;
-
-                    
-
-                    
-                   
-
-
-
-
-
             }
-
-
-
         }
-        //return $reportgraphs;
-
-
+        return $reportgraphs;
     }
 
     public function get_calcs($finaltable, $tablehead) {
@@ -898,13 +538,13 @@ class report_base {
 
     }
 
-    public function add_jsordering() {
+    public function add_jsordering(\moodle_page $moodle_page) {
         switch (get_config('block_configurable_reports', 'reporttableui')) {
             case 'datatables':
-                cr_add_jsdatatables('#reporttable');
+                cr_add_jsdatatables('#reporttable', $moodle_page);
                 break;
             case 'jquery':
-                cr_add_jsordering('#reporttable');
+                cr_add_jsordering('#reporttable', $moodle_page);
                 echo html_writer::tag('style',
                     '#page-blocks-configurable_reports-viewreport .generaltable {
                     overflow: auto;
@@ -924,7 +564,7 @@ class report_base {
 
     }
 
-    public function print_template($config) {
+    public function print_template($config, \moodle_page $moodle_page) {
         global $DB, $CFG, $OUTPUT;
 
         $pagecontents = array();
@@ -988,7 +628,7 @@ class report_base {
         }
 
         if ($this->config->jsordering) {
-            $this->add_jsordering();
+            $this->add_jsordering($moodle_page);
         }
         $this->print_filters();
 
@@ -1023,7 +663,7 @@ class report_base {
         echo "</div>\n";
     }
 
-    public function print_report_page() {
+    public function print_report_page(\moodle_page $moodlepage) {
         global $DB, $CFG, $OUTPUT, $USER;
 
         cr_print_js_function();
@@ -1032,7 +672,7 @@ class report_base {
         $template = (isset($components['template']['config']) && $components['template']['config']->enabled && $components['template']['config']->record) ? $components['template']['config'] : false;
 
         if ($template) {
-            $this->print_template($template);
+            $this->print_template($template, $moodlepage);
             return true;
         }
 
@@ -1055,7 +695,7 @@ class report_base {
             $this->print_graphs();
 
             if ($this->config->jsordering) {
-                $this->add_jsordering();
+                $this->add_jsordering($moodlepage);
             }
 
             $this->totalrecords = count($this->finalreport->table->data);
@@ -1118,6 +758,5 @@ class report_base {
         return join('', array_reverse($ar[0]));
     }
 }
-
 
 
